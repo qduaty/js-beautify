@@ -262,6 +262,10 @@ function Beautifier(html_source, options, js_beautify, css_beautify) {
     is_wrap_attributes_force = wrap_attributes.substr(0, 'force'.length) === 'force';
     is_wrap_attributes_force_expand_multiline = (wrap_attributes === 'force-expand-multiline');
     is_wrap_attributes_force_aligned = (wrap_attributes === 'force-aligned');
+    is_wrap_attributes_smart = (wrap_attributes === 'smart');
+    if(is_wrap_attributes_smart)
+		is_wrap_attributes_force = is_wrap_attributes_force_expand_multiline = true;
+
     end_with_newline = (options.end_with_newline === undefined) ? false : options.end_with_newline;
     extra_liners = (typeof options.extra_liners === 'object') && options.extra_liners ?
         options.extra_liners.concat() : (typeof options.extra_liners === 'string') ?
@@ -368,8 +372,23 @@ function Beautifier(html_source, options, js_beautify, css_beautify) {
         // return true if a newline was added, false if a space was added
         this.space_or_wrap = function(content) {
             if (this.line_char_count >= this.wrap_line_length) { //insert a line when the wrap_line_length is reached
+                let lastSpacePos = content.lastIndexOf(' ');
+                let tail;
+                if(lastSpacePos > -1) {
+                    tail = content.slice(lastSpacePos + 1, content.length);
+                    content.length = lastSpacePos;
+                }
                 this.print_newline(false, content);
                 this.print_indentation(content);
+                if(tail) {
+					for(let i = 0; i < tail.length; i++){
+						content.push(tail[i]);
+						this.line_char_count += tail[i].length;
+					}
+					content.push(' ');
+					this.line_char_count++;
+                    return false;
+                }
                 return true;
             } else {
                 this.line_char_count++;
@@ -640,6 +659,85 @@ function Beautifier(html_source, options, js_beautify, css_beautify) {
                     break;
                 }
             } while (input_char !== '>');
+
+            if(is_wrap_attributes_smart) {
+				let firstSpacePos = content.indexOf(' ');
+				if(firstSpacePos > -1) {
+					let tagNameLength = 0;
+					for(let i = 0; i < firstSpacePos; i++)
+						tagNameLength += content[i].length;
+					let remainingSpace = wrap_line_length - tagNameLength - 1 - this.indent_level * this.indent_string.length;
+					let maxAttributeLength = 0;
+					let inlineAttributesLength = 0;
+					for(let i = firstSpacePos + 1; i < content.length; i++) {
+						if(!/\s+/.test(content[i])) {
+							maxAttributeLength = Math.max(maxAttributeLength, content[i].length);
+							inlineAttributesLength += content[i].length + 1;
+						}
+					}
+					
+					if(inlineAttributesLength <= remainingSpace) {
+						// inline: remove newlines and convert indentations to a single space
+						let space = false;
+						for(let i = 1; i < content.length; i++)
+							if(content[i] == '\n')
+								content[i] = '';
+							else if(/^\s+$/.test(content[i])){
+								if(space) 
+									content[i] = ''; 
+								else 
+									content[i] = ' ';
+								space = true;
+							}
+							else if(i == content.length - 1) {
+								for(let j = i - 1; j; j--){
+									if(/^\s+$/.test(content[j]))
+										content[j] = '';
+									else 
+										break;
+								}
+							}
+							else {
+								space = false;
+							}
+					}
+					else if(maxAttributeLength <= remainingSpace) {
+						// aligned: remove first newline and indentation, change remaining indentations to tagNameLength + 1
+						let firstIndentation = true;
+						let space = false;
+						for(let i = 1; i < content.length; i++) {
+							if(firstIndentation) {
+								if(content[i] == '\n') {
+									content[i] = '';
+								}
+								else if(/^\s+$/.test(content[i])) {
+									content[i] = ' ';
+									firstIndentation = false;
+									space = true;
+								}
+							}
+							else if(content[i] != '\n' && /^\s+$/.test(content[i])) {
+								if(space)
+									content[i] = '';
+								else
+									content[i] = '                                                                                '.substr(0, tagNameLength);
+								space = true;
+							}
+							else if(i == content.length - 1) {
+								for(let j = i - 1; j; j--){
+									if(/^\s+$/.test(content[j]))
+										content[j] = '';
+									else 
+										break;
+								}
+							}
+							else {
+								space = false;
+							}
+						}
+					}
+                }
+            }
 
             var tag_complete = content.join('');
             var tag_index;
