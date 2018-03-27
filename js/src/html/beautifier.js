@@ -1,4 +1,4 @@
-/*jshint curly:true, eqeqeq:true, laxbreak:true, noempty:false */
+/*jshint curly:true, eqeqeq:true, laxbreak:true, noempty:false, esversion: 6 */
 /*
 
   The MIT License (MIT)
@@ -115,8 +115,10 @@ function Beautifier(html_source, options, js_beautify, css_beautify) {
     is_wrap_attributes_force_expand_multiline = (wrap_attributes === 'force-expand-multiline');
     is_wrap_attributes_force_aligned = (wrap_attributes === 'force-aligned');
     is_wrap_attributes_smart = (wrap_attributes === 'smart');
-    if(is_wrap_attributes_smart)
-		is_wrap_attributes_force = is_wrap_attributes_force_expand_multiline = true;
+
+    if(is_wrap_attributes_smart) {
+        is_wrap_attributes_force = is_wrap_attributes_force_expand_multiline = true;
+    }
 
     end_with_newline = (options.end_with_newline === undefined) ? false : options.end_with_newline;
     extra_liners = (typeof options.extra_liners === 'object') && options.extra_liners ?
@@ -516,12 +518,16 @@ function Beautifier(html_source, options, js_beautify, css_beautify) {
 				let firstSpacePos = content.indexOf(' ');
 				if(firstSpacePos > -1) {
 					let tagNameLength = 0;
-					for(let i = 0; i < firstSpacePos; i++)
-						tagNameLength += content[i].length;
-					let remainingSpace = wrap_line_length - tagNameLength - 1 - this.indent_level * this.indent_string.length;
+
+                    for(let i = 0; i < firstSpacePos; i++){
+                        tagNameLength += content[i].length;
+                    }
+
+                    let remainingSpace = wrap_line_length - tagNameLength - 1 - this.indent_level * this.indent_string.length;
 					let maxAttributeLength = 0;
 					let inlineAttributesLength = 0;
-					for(let i = firstSpacePos + 1; i < content.length; i++) {
+
+                    for(let i = firstSpacePos + 1; i < content.length; i++) {
 						if(!/\s+/.test(content[i])) {
 							maxAttributeLength = Math.max(maxAttributeLength, content[i].length);
 							inlineAttributesLength += content[i].length + 1;
@@ -531,27 +537,34 @@ function Beautifier(html_source, options, js_beautify, css_beautify) {
 					if(inlineAttributesLength <= remainingSpace) {
 						// inline: remove newlines and convert indentations to a single space
 						let space = false;
-						for(let i = 1; i < content.length; i++)
-							if(content[i] == '\n')
-								content[i] = '';
-							else if(/^\s+$/.test(content[i])){
-								if(space)
-									content[i] = '';
-								else
-									content[i] = ' ';
+						for(let i = 1; i < content.length; i++) {
+							if(content[i] === '\n') {
+                                content[i] = '';
+                            }
+							else if(/^\s+$/.test(content[i])) {
+								if(space) {
+                                    content[i] = '';
+                                }
+								else {
+                                    content[i] = ' ';
+                                }
+
 								space = true;
 							}
-							else if(i == content.length - 1) {
+							else if(i === content.length - 1) {
 								for(let j = i - 1; j; j--){
-									if(/^\s+$/.test(content[j]))
-										content[j] = '';
-									else
-										break;
+									if(/^\s+$/.test(content[j])) {
+                                        content[j] = '';
+                                    }
+									else {
+                                        break;
+                                    }
 								}
 							}
 							else {
 								space = false;
-							}
+                            }
+                        }
 					}
 					else if(maxAttributeLength <= remainingSpace) {
 						// aligned: remove first newline and indentation, change remaining indentations to tagNameLength + 1
@@ -559,7 +572,7 @@ function Beautifier(html_source, options, js_beautify, css_beautify) {
 						let space = false;
 						for(let i = 1; i < content.length; i++) {
 							if(firstIndentation) {
-								if(content[i] == '\n') {
+								if(content[i] === '\n') {
 									content[i] = '';
 								}
 								else if(/^\s+$/.test(content[i])) {
@@ -568,19 +581,24 @@ function Beautifier(html_source, options, js_beautify, css_beautify) {
 									space = true;
 								}
 							}
-							else if(content[i] != '\n' && /^\s+$/.test(content[i])) {
-								if(space)
-									content[i] = '';
-								else
-									content[i] = '                                                                                '.substr(0, tagNameLength);
+							else if(content[i] !== '\n' && /^\s+$/.test(content[i])) {
+								if(space) {
+                                    content[i] = '';
+                                }
+								else {
+                                    content[i] = '                                                                                '.substr(0, tagNameLength);
+                                }
+
 								space = true;
 							}
-							else if(i == content.length - 1) {
+							else if(i === content.length - 1) {
 								for(let j = i - 1; j; j--){
-									if(/^\s+$/.test(content[j]))
-										content[j] = '';
-									else
-										break;
+									if(/^\s+$/.test(content[j])) {
+                                        content[j] = '';
+                                    }
+									else {
+                                        break;
+                                    }
 								}
 							}
 							else {
